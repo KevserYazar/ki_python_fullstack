@@ -1,62 +1,43 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pathlib import Path
+import json
 
-app = FastAPI()
+app = FastAPI(
+    title="KI Python Fullstack API",
+    version="0.1.0",
+    description="Lernprojekt: Patientenliste als JSON über FastAPI"
+)
+
+DATA_FILE = Path("patients.json")
 
 
-class PatientData(BaseModel):
-    age: int
-    risk: str
+def load_patients() -> list[dict]:
+    if not DATA_FILE.exists():
+        return []
+    with DATA_FILE.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.get("/")
-def health_check():
-    return {"status": "API läuft 🚀"}
-
-# ===========================================================================
-# API Endpunkte:
-# http://127.0.0.1:8000 - Root-Endpunkt
-# http://127.0.0.1:8000/docs - Automatische API-Dokumentation (Swagger UI)
-# http://127.0.0.1:8000/risk?age=72 - Risiko-Check
-# http://127.0.0.1:8000/patient - POST für Patientendaten
-# ===========================================================================
-
-def check_risk(age: int) -> str:
-    if age > 60:
-        return "hoch"
-    return "normal"
-
-@app.get("/risk")
-def get_risk(age: int):
-    return {
-        "age": age,
-        "risk": check_risk(age)
-    }
+def root():
+    return {"status": "API läuft"}
 
 
-@app.post("/patient")
-async def analyze_patient(patient: PatientData):
-    """Analysiert Patientendaten und gibt Empfehlungen zurück"""
-    risk_level = check_risk(patient.age)
-    
-    recommendation = ""
-    if risk_level == "hoch":
-        recommendation = "Regelmäßige Kontrollen empfohlen"
-    else:
-        recommendation = "Normale Vorsorgeuntersuchungen ausreichend"
-    
-    return {
-        "age": patient.age,
-        "submitted_risk": patient.risk,
-        "calculated_risk": risk_level,
-        "recommendation": recommendation,
-        "match": patient.risk == risk_level
-    }
+@app.get("/patients")
+def get_patients():
+    return load_patients()
 
-#Browser öffnen:
-#http://127.0.0.1:8000/risk?age=72
-{
-  "age": 72,
-  "risk": "hoch"
-}
-#========================================================================== 
+#============================================================================
+
+"Erklärungen"
+# app= FastAPI(): Erstellt meinen Server
+# @app.get("/patients"): Definiert eine API-Route, Endbpunkt
+#Bedeutet: Wenn jemand  "/patients" aufruft → führe diese Funktion aus
+# load_patients(): Lädt Patientendaten aus einer JSON-Datei
+# return patients: FAstApi gibt die Patientendaten automatisch als JSON-Antwort zurück
+"API starten"
+#Im Terminal (Projektordner, .venv aktiv): im bash eingeben = "uvicorn api:app --reload"
+#uvicorn api:app --reload
+#uvicorn = Server, Uvicorn lädt exakt das, was du angibst:
+#bedeutet: Datei: api.py
+#.        Variable: app 
