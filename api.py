@@ -1,7 +1,11 @@
+from pydantic import BaseModel
 from fastapi import FastAPI
 from pathlib import Path
 import json
 from fastapi import HTTPException
+
+from tag5_json import ensure_patient_ids, get_next_id, save_patients
+
 
 app = FastAPI(
     title="KI Python Fullstack API",
@@ -10,6 +14,10 @@ app = FastAPI(
 )
 
 DATA_FILE = Path("patients.json")
+class PatientCreate(BaseModel):
+    name: str
+    age: int
+    mood: str
 
 
 def load_patients() -> list[dict]:
@@ -37,6 +45,27 @@ def get_patient_by_id(patient_id: int):
         detail=f"Patient mit ID {patient_id} nicht gefunden"
     )
 
+@app.post("/patients")
+def create_patient(patient: PatientCreate):
+    patients = load_patients()
+
+    # IDs sicherstellen (für alte Daten)
+    patients = ensure_patient_ids(patients)
+
+    # neue ID vergeben
+    new_id = get_next_id(patients)
+
+    new_patient = {
+        "id": new_id,
+        "name": patient.name,
+        "age": patient.age,
+        "mood": patient.mood,
+    }
+
+    patients.append(new_patient)
+    save_patients(patients)
+
+    return new_patient
 
 #============================================================================
 
